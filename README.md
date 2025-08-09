@@ -88,37 +88,6 @@ If you built from source, use:
 3. Restart Claude for Desktop
 4. Look for the MCP icon in Claude's interface to confirm it's working
 
-### Using with ChatGPT
-
-1. Locate your ChatGPT MCP configuration file (the location varies by platform; see ChatGPT's documentation).
-2. Add the following server configuration:
-
-```json
-{
-  "mcpServers": {
-    "activitywatch": {
-      "command": "activitywatch-mcp-server",
-      "args": []
-    }
-  }
-}
-```
-
-If you built from source, use:
-
-```json
-{
-  "mcpServers": {
-    "activitywatch": {
-      "command": "node",
-      "args": ["/path/to/activitywatch-mcp-server/dist/index.js"]
-    }
-  }
-}
-```
-
-3. Restart ChatGPT and verify the server is available in the MCP or connectors interface.
-
 ### Example Queries
 
 Here are some example queries you can try in Claude:
