@@ -1,14 +1,11 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { ListToolsRequestSchema, CallToolRequestSchema, ListResourcesRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import axios from "axios";
 import { activitywatch_list_buckets_tool } from "./bucketList.js";
 import { activitywatch_run_query_tool } from "./query.js";
 import { activitywatch_get_events_tool } from "./rawEvents.js";
 import { activitywatch_query_examples_tool } from "./queryExamples.js";
 import { activitywatch_get_settings_tool } from "./getSettings.js";
-
-const AW_API_BASE = "http://localhost:5600/api/0";
 
 // Helper function to handle type-safe tool responses
 const makeSafeToolResponse = (handler: Function) => async (...args: any[]) => {
@@ -36,8 +33,7 @@ const server = new Server({
   version: "1.1.0"
 }, {
   capabilities: {
-    tools: {},
-    resources: {}
+    tools: {}
   }
 });
 
@@ -72,48 +68,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       }
     ]
   };
-});
-
-// Register resource handlers for ChatGPT search compatibility
-server.setRequestHandler(ListResourcesRequestSchema, async () => {
-  try {
-    const response = await axios.get(`${AW_API_BASE}/buckets`);
-    const buckets: Record<string, any> = response.data;
-    const resources = Object.entries(buckets).map(([id, bucket]) => ({
-      uri: `activitywatch://bucket/${encodeURIComponent(id)}`,
-      name: id,
-      description: `ActivityWatch bucket from ${bucket.client} (${bucket.type})`,
-      mimeType: "application/json"
-    }));
-    return { resources };
-  } catch (error) {
-    console.error("Error listing resources:", error);
-    return { resources: [] };
-  }
-});
-
-server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-  try {
-    const { uri } = request.params;
-    const match = uri.match(/^activitywatch:\/\/bucket\/(.+)$/);
-    if (!match) {
-      return {
-        contents: [{ uri, mimeType: "text/plain", text: `Unsupported URI: ${uri}` }]
-      };
-    }
-    const bucketId = decodeURIComponent(match[1]);
-    const url = `${AW_API_BASE}/buckets/${encodeURIComponent(bucketId)}/events?limit=100`;
-    const response = await axios.get(url);
-    return {
-      contents: [{ uri, mimeType: "application/json", text: JSON.stringify(response.data, null, 2) }]
-    };
-  } catch (error) {
-    console.error("Error reading resource:", error);
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      contents: [{ uri: request.params.uri, mimeType: "text/plain", text: `Error reading resource: ${message}` }]
-    };
-  }
 });
 
 // Register tool call handler
